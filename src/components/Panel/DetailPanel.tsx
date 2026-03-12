@@ -57,12 +57,12 @@ const DetailPanel: React.FC = () => {
   const handleAddChild = useCallback((secondParentId?: string | 'new') => {
     if (!selectedPersonId) return;
 
-    let siblingParentId = secondParentId;
+    let siblingParentId: string | undefined = secondParentId === 'new' ? undefined : secondParentId;
     if (secondParentId === 'new') {
-      siblingParentId = addPartner(selectedPersonId);
+      siblingParentId = addPartner(selectedPersonId) ?? undefined;
     }
 
-    const childId = addChild(selectedPersonId, siblingParentId !== 'new' ? siblingParentId : undefined);
+    const childId = addChild(selectedPersonId, siblingParentId);
     selectPerson(childId);
     setShowChildOptions(false);
   }, [selectedPersonId, addPartner, addChild, selectPerson]);
@@ -78,7 +78,7 @@ const DetailPanel: React.FC = () => {
   const handleAddPartner = useCallback(() => {
     if (!selectedPersonId) return;
     const partnerId = addPartner(selectedPersonId);
-    selectPerson(partnerId);
+    if (partnerId) selectPerson(partnerId);
   }, [selectedPersonId, addPartner, selectPerson]);
 
   if (!isPanelOpen || !person || !selectedPersonId) {

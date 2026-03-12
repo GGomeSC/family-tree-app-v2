@@ -38,24 +38,19 @@ const FamilyCanvas: React.FC = () => {
   // Debounce ref for layout requests
   const layoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Callback when layout engine finishes
   const handleLayoutComplete = useCallback(
     (result: LayoutResult) => {
       const flowNodes: Node[] = result.nodes.map((n) => ({
         id: n.id,
         type: 'person',
         position: n.position,
-        data: { ...n.data, isSelected: n.id === selectedPersonId },
-        selected: n.id === selectedPersonId,
+        data: { ...n.data },
         draggable: true,
       }));
 
       const flowEdges: Edge[] = result.familyGroups.map((fg: FamilyGroupData) => {
         return {
           id: fg.id,
-          // React Flow strictly requires a source and target to mount an edge.
-          // By giving it any arbitrary nodes from the group, the canvas will mount it.
-          // The edge's internal custom SVG renderer handles absolute drawing coordinates.
           source: fg.parents[0] || fg.children[0] || fg.id,
           target: fg.parents[1] || fg.children[0] || fg.id,
           type: 'familyGroup',
@@ -67,18 +62,13 @@ const FamilyCanvas: React.FC = () => {
       setEdges(flowEdges);
       setIsLayoutReady(true);
     },
-    [selectedPersonId, setNodes, setEdges]
+    [setNodes, setEdges]
   );
 
   const { requestLayout } = useLayoutWorker(handleLayoutComplete);
 
   // Convert persons map to layout input and request layout
   useEffect(() => {
-    if (persons.size === 0) {
-      // Allow the layout worker to naturally process an empty graph and emit the empty payload
-      // through handleLayoutComplete, which correctly updates the nodes/edges/isLayoutReady state.
-    }
-
     // Debounce layout requests (50ms)
     if (layoutTimerRef.current) clearTimeout(layoutTimerRef.current);
     layoutTimerRef.current = setTimeout(() => {

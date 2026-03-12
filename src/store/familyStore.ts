@@ -27,7 +27,7 @@ export interface FamilyState {
   addParent: (childId: string) => string | null;
   addChild: (parentId: string, secondParentId?: string) => string;
   addSibling: (siblingOfId: string) => string | null;
-  addPartner: (personId: string) => string;
+  addPartner: (personId: string) => string | null;
 
   // ── Derived ───────────────────────────────────────────
   getChildren: (personId: string) => string[];
@@ -254,7 +254,7 @@ export const useFamilyStore = create<FamilyState>((set, get) => ({
   addPartner: (personId) => {
     const persons = get().persons;
     const person = persons.get(personId);
-    if (!person) return '';
+    if (!person) return null;
 
     const partnerId = generateId();
     const partner = createBlankPerson({

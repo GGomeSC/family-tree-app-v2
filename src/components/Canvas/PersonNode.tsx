@@ -1,16 +1,16 @@
 import React, { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { User, Heart, Skull } from 'lucide-react';
 import type { LayoutPerson } from '../../workers/layoutWorker';
 
-type PersonNodeData = LayoutPerson & { isSelected?: boolean };
+export type PersonNodeData = LayoutPerson & { isSelected?: boolean } & Record<string, unknown>;
 
 /**
  * Custom React Flow node representing a person in the family tree.
  * Shows avatar, name, birth/death info, and gender-colored accent.
  */
-const PersonNode: React.FC<NodeProps> = memo(({ data, selected }) => {
-  const person = data as unknown as PersonNodeData;
+const PersonNode: React.FC<NodeProps<Node<PersonNodeData, 'person'>>> = memo(({ data, selected }) => {
+  const person = data;
   const isSelected = selected || person.isSelected;
 
   const genderClass = person.gender === 'female' ? 'node-female' : 'node-male';
