@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -14,13 +14,13 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import PersonNode from './PersonNode';
-import RelationshipEdge from './RelationshipEdge';
+import FamilyGroupEdge from './FamilyGroupEdge';
 import { useFamilyStore } from '../../store/familyStore';
 import { useLayoutWorker } from '../../hooks/useLayoutWorker';
-import type { LayoutPerson, LayoutResult } from '../../workers/layoutWorker';
+import type { LayoutPerson, LayoutResult, FamilyGroupData } from '../../workers/layoutWorker';
 
 const nodeTypes = { person: PersonNode };
-const edgeTypes = { relationship: RelationshipEdge };
+const edgeTypes = { familyGroup: FamilyGroupEdge };
 
 /**
  * Main canvas component wrapping React Flow.
@@ -50,16 +50,16 @@ const FamilyCanvas: React.FC = () => {
         draggable: true,
       }));
 
-      const flowEdges: Edge[] = result.edges.map((e) => {
+      const flowEdges: Edge[] = result.familyGroups.map((fg: FamilyGroupData) => {
         return {
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          type: 'relationship',
-          sourceHandle: e.sourceHandle || (e.type === 'partner' ? 'right' : 'bottom'),
-          targetHandle: e.targetHandle || (e.type === 'partner' ? 'left' : 'top'),
-          data: { type: e.type },
-          animated: e.type === 'parent',
+          id: fg.id,
+          // React Flow strictly requires a source and target to mount an edge.
+          // By giving it any arbitrary nodes from the group, the canvas will mount it.
+          // The edge's internal custom SVG renderer handles absolute drawing coordinates.
+          source: fg.parents[0] || fg.children[0] || fg.id,
+          target: fg.parents[1] || fg.children[0] || fg.id,
+          type: 'familyGroup',
+          data: { parents: fg.parents, children: fg.children },
         };
       });
 
@@ -126,17 +126,9 @@ const FamilyCanvas: React.FC = () => {
     [selectPerson]
   );
 
-  // Handle canvas click (deselect)
   const onPaneClick = useCallback(() => {
     selectPerson(null);
   }, [selectPerson]);
-
-  const defaultEdgeOptions = useMemo(
-    () => ({
-      type: 'relationship',
-    }),
-    []
-  );
 
   return (
     <div className="family-canvas" id="family-canvas">
@@ -149,7 +141,6 @@ const FamilyCanvas: React.FC = () => {
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        defaultEdgeOptions={defaultEdgeOptions}
         fitView
         fitViewOptions={{ padding: 0.3 }}
         minZoom={0.1}

@@ -30,18 +30,15 @@ export interface LayoutNode {
   data: LayoutPerson;
 }
 
-export interface LayoutEdge {
+export interface FamilyGroupData {
   id: string;
-  source: string;
-  target: string;
-  type: 'parent' | 'partner';
-  sourceHandle?: string;
-  targetHandle?: string;
+  parents: string[];
+  children: string[];
 }
 
 export interface LayoutResult {
   nodes: LayoutNode[];
-  edges: LayoutEdge[];
+  familyGroups: FamilyGroupData[];
 }
 
 const NODE_WIDTH = 220;
@@ -68,49 +65,21 @@ function computeLayout(persons: LayoutPerson[]): LayoutResult {
     g.setNode(person.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   }
 
-  // Track edges we've added to avoid duplicates
-  const addedEdges = new Set<string>();
-  const edges: LayoutEdge[] = [];
+  const addedDagreEdges = new Set<string>();
 
-  // Add parent-child edges
+  // Add parent-child edges for Dagre's structural hierarchy
   for (const person of persons) {
     for (const parentId of person.parentIds) {
       if (personMap.has(parentId)) {
         const edgeKey = `parent-${parentId}-${person.id}`;
-        if (!addedEdges.has(edgeKey)) {
+        if (!addedDagreEdges.has(edgeKey)) {
           g.setEdge(parentId, person.id);
-          addedEdges.add(edgeKey);
-          edges.push({
-            id: edgeKey,
-            source: parentId,
-            target: person.id,
-            type: 'parent',
-          });
+          addedDagreEdges.add(edgeKey);
         }
       }
     }
   }
-
-  // Add partner edges (invisible to dagre but rendered)
-  // For dagre, we add partner edges with minimal weight so partners
-  // stay on the same rank but dagre doesn't overly constrain them.
-  for (const person of persons) {
-    for (const partnerId of person.partnerIds) {
-      const edgeKey1 = `partner-${person.id}-${partnerId}`;
-      const edgeKey2 = `partner-${partnerId}-${person.id}`;
-      if (!addedEdges.has(edgeKey1) && !addedEdges.has(edgeKey2) && personMap.has(partnerId)) {
-        // Don't add partner edges to dagre (they should be same-rank, not hierarchical)
-        addedEdges.add(edgeKey1);
-        addedEdges.add(edgeKey2);
-        edges.push({
-          id: edgeKey1,
-          source: person.id,
-          target: partnerId,
-          type: 'partner',
-        });
-      }
-    }
-  }
+  // Partner edges are intentionally NOT added to dagre to avoid hierarchical displacement.
 
   dagre.layout(g);
 
@@ -139,8 +108,6 @@ function computeLayout(persons: LayoutPerson[]): LayoutResult {
   }
 
   // Post-process: adjust partner positions to be side-by-side on the same Y level.
-  // Instead of averaging Y (which displaces nodes placed by dagre's hierarchy),
-  // we keep the "anchored" partner's Y and move the other to match.
   const isSpaceOccupied = (x: number, y: number, ignoreIds: string[]) => {
     const padding = 20;
     for (const n of nodes) {
@@ -186,32 +153,26 @@ function computeLayout(persons: LayoutPerson[]): LayoutResult {
           baseNode = partnerNode;
           nodeToMove = personNode;
         } else {
-          // Both or neither anchored — average is fine
           targetY = (personNode.position.y + partnerNode.position.y) / 2;
           baseNode = personNode;
           nodeToMove = partnerNode;
         }
 
-        // Apply computed Y
         personNode.position.y = targetY;
         partnerNode.position.y = targetY;
 
-        // Try to place nodeToMove next to baseNode
         const rightX = baseNode.position.x + NODE_WIDTH + 60;
         const leftX = baseNode.position.x - NODE_WIDTH - 60;
 
-        // Important: check if dagre already placed them well and they don't overlap with others
         const currentDist = Math.abs(personNode.position.x - partnerNode.position.x);
         const alreadyAdjacent = currentDist >= NODE_WIDTH && currentDist <= NODE_WIDTH + 120;
 
         if (!alreadyAdjacent || isSpaceOccupied(nodeToMove.position.x, targetY, [personNode.id, partnerNode.id])) {
-          // We must place nodeToMove
           if (!isSpaceOccupied(rightX, targetY, [personNode.id, partnerNode.id])) {
             nodeToMove.position.x = rightX;
           } else if (!isSpaceOccupied(leftX, targetY, [personNode.id, partnerNode.id])) {
             nodeToMove.position.x = leftX;
           } else {
-            // Both occupied, just put it to the right with extra spacing
             let fallbackX = rightX;
             while (isSpaceOccupied(fallbackX, targetY, [personNode.id, partnerNode.id])) {
               fallbackX += NODE_WIDTH + 60;
@@ -225,27 +186,35 @@ function computeLayout(persons: LayoutPerson[]): LayoutResult {
     processedPartners.add(person.id);
   }
 
-  // Assign handles dynamically to ensure elegant connections
-  for (const edge of edges) {
-    if (edge.type === 'partner') {
-      const sNode = nodes.find(n => n.id === edge.source);
-      const tNode = nodes.find(n => n.id === edge.target);
-      if (sNode && tNode) {
-        if (sNode.position.x < tNode.position.x) {
-          edge.sourceHandle = 'right';
-          edge.targetHandle = 'left';
-        } else {
-          edge.sourceHandle = 'left';
-          edge.targetHandle = 'right';
-        }
+  // Generate Pedigree Domains: Aggregate raw edges into precise family groups.
+  const familyGroupsMap = new Map<string, FamilyGroupData>();
+
+  // 1. First ensure all partner couples are registered as family groups, even if they have no shared children yet.
+  for (const person of persons) {
+    for (const partnerId of person.partnerIds) {
+      const sortedParents = [person.id, partnerId].sort();
+      const groupKey = `familyGroup-${sortedParents.join('-')}`;
+      if (!familyGroupsMap.has(groupKey)) {
+        familyGroupsMap.set(groupKey, { id: groupKey, parents: sortedParents, children: [] });
       }
-    } else if (edge.type === 'parent') {
-      edge.sourceHandle = 'bottom';
-      edge.targetHandle = 'top';
     }
   }
 
-  return { nodes, edges };
+  // 2. Add all children to their respective parent's family groups.
+  for (const person of persons) {
+    if (person.parentIds.length === 0) continue;
+    const sortedParents = [...person.parentIds].sort();
+    const groupKey = `familyGroup-${sortedParents.join('-')}`;
+    if (!familyGroupsMap.has(groupKey)) {
+      // Handles single parents gracefully
+      familyGroupsMap.set(groupKey, { id: groupKey, parents: sortedParents, children: [] });
+    }
+    familyGroupsMap.get(groupKey)!.children.push(person.id);
+  }
+
+  const familyGroups = Array.from(familyGroupsMap.values());
+
+  return { nodes, familyGroups };
 }
 
 // Web Worker message handler
