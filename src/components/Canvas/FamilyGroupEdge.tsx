@@ -138,7 +138,7 @@ export default function FamilyGroupEdge({ data }: EdgeProps<FamilyGroupEdgeType>
         paths.push(
           <path
             key={`child-drop-${child.id}`}
-            d={`M ${midX} ${trunkEndY} H ${childX} V ${childY}`}
+            d={`M ${midX} ${trunkEndY} C ${midX} ${(trunkEndY + childY) / 2}, ${childX} ${(trunkEndY + childY) / 2}, ${childX} ${childY}`}
             fill="none"
             stroke={STROKE_COLOR}
             strokeWidth={STROKE_WIDTH}
@@ -173,7 +173,7 @@ export default function FamilyGroupEdge({ data }: EdgeProps<FamilyGroupEdgeType>
           paths.push(
             <path
               key={`child-drop-${child.id}`}
-              d={`M ${childX} ${trunkEndY} L ${childX} ${childY}`}
+              d={`M ${childX} ${trunkEndY} C ${childX} ${(trunkEndY + childY) / 2}, ${childX} ${(trunkEndY + childY) / 2}, ${childX} ${childY}`}
               fill="none"
               stroke={STROKE_COLOR}
               strokeWidth={STROKE_WIDTH}
@@ -216,7 +216,7 @@ export default function FamilyGroupEdge({ data }: EdgeProps<FamilyGroupEdgeType>
       paths.push(
         <path
           key={`child-drop-${child.id}`}
-          d={`M ${midX} ${trunkEndY} H ${childX} V ${childY}`}
+          d={`M ${midX} ${trunkEndY} C ${midX} ${(trunkEndY + childY) / 2}, ${childX} ${(trunkEndY + childY) / 2}, ${childX} ${childY}`}
           fill="none"
           stroke={STROKE_COLOR}
           strokeWidth={STROKE_WIDTH}
@@ -248,7 +248,7 @@ export default function FamilyGroupEdge({ data }: EdgeProps<FamilyGroupEdgeType>
         paths.push(
           <path
             key={`child-drop-${child.id}`}
-            d={`M ${childX} ${trunkEndY} L ${childX} ${childY}`}
+            d={`M ${childX} ${trunkEndY} C ${childX} ${(trunkEndY + childY) / 2}, ${childX} ${(trunkEndY + childY) / 2}, ${childX} ${childY}`}
             fill="none"
             stroke={STROKE_COLOR}
             strokeWidth={STROKE_WIDTH}

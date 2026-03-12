@@ -463,16 +463,7 @@ a {
 
 /* Node handles (connection points) */
 .node-handle {
-  width: 8px !important;
-  height: 8px !important;
-  background: var(--brand-primary) !important;
-  border: 2px solid var(--bg-surface) !important;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
-.person-node:hover .node-handle {
-  opacity: 1;
+  display: none !important;
 }
 
 .partner-handle {

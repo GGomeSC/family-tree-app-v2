@@ -75,10 +75,8 @@ const FamilyCanvas: React.FC = () => {
   // Convert persons map to layout input and request layout
   useEffect(() => {
     if (persons.size === 0) {
-      setNodes([]);
-      setEdges([]);
-      setIsLayoutReady(true);
-      return;
+      // Allow the layout worker to naturally process an empty graph and emit the empty payload
+      // through handleLayoutComplete, which correctly updates the nodes/edges/isLayoutReady state.
     }
 
     // Debounce layout requests (50ms)
