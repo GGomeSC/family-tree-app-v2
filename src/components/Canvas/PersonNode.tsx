@@ -36,11 +36,11 @@ const PersonNode: React.FC<NodeProps> = memo(({ data, selected }) => {
       id={`person-node-${person.id}`}
     >
       <Handle type="target" position={Position.Top} id="top" className="node-handle" />
-      
+
       {/* Bidirectional Left Handles */}
       <Handle type="target" position={Position.Left} id="left" className="node-handle partner-handle" />
       <Handle type="source" position={Position.Left} id="left" className="node-handle partner-handle" style={{ opacity: 0 }} />
-      
+
       {/* Bidirectional Right Handles */}
       <Handle type="source" position={Position.Right} id="right" className="node-handle partner-handle" />
       <Handle type="target" position={Position.Right} id="right" className="node-handle partner-handle" style={{ opacity: 0 }} />

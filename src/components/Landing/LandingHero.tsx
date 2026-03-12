@@ -39,7 +39,7 @@ const LandingHero: React.FC = () => {
         <p className="hero-subtitle">
           Create beautiful, interactive family trees right in your browser.
           <br />
-          No sign-up required — your data stays local until you choose to save.
+          No sign-up required — your data stays local always.
         </p>
 
         <button

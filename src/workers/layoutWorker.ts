@@ -203,7 +203,7 @@ function computeLayout(persons: LayoutPerson[]): LayoutResult {
         // Important: check if dagre already placed them well and they don't overlap with others
         const currentDist = Math.abs(personNode.position.x - partnerNode.position.x);
         const alreadyAdjacent = currentDist >= NODE_WIDTH && currentDist <= NODE_WIDTH + 120;
-        
+
         if (!alreadyAdjacent || isSpaceOccupied(nodeToMove.position.x, targetY, [personNode.id, partnerNode.id])) {
           // We must place nodeToMove
           if (!isSpaceOccupied(rightX, targetY, [personNode.id, partnerNode.id])) {

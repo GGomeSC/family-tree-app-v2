@@ -56,7 +56,7 @@ const DetailPanel: React.FC = () => {
 
   const handleAddChild = useCallback((secondParentId?: string | 'new') => {
     if (!selectedPersonId) return;
-    
+
     let siblingParentId = secondParentId;
     if (secondParentId === 'new') {
       siblingParentId = addPartner(selectedPersonId);
